@@ -1,0 +1,42 @@
+\section{Calibration de la Surface SSVI}
+\label{sec:ssvi}
+
+\subsection{Modèle SSVI}
+
+On paramétrise la variance totale $w(k, t) = \sigma_{impl}^2(k,t)\cdot t$ par
+le modèle SSVI de \citet{gatheral2014arbitrage} :
+\begin{equation}
+  w(k, t) = \frac{\thetat}{2}\!\left\{
+    1 + \rho\,\phit\,k
+    + \sqrt{[\phit\,k + \rho]^2 + (1-\rho^2)}
+  \right\}
+  \label{eq:ssvi}
+\end{equation}
+
+avec la structure de terme ATM :
+\begin{equation}
+  \thetat = \nu_\infty\,t + \frac{\nu_0 - \nu_\infty}{\kappa}(1 - e^{-\kappa t})
+\end{equation}
+et la paramétrisation de skew power-law :
+\begin{equation}
+  \phi(\theta) = \frac{\eta}{\theta^\lambda(1+\theta)^{1-\lambda}}
+\end{equation}
+
+\subsection{Conditions de Non-Arbitrage}
+
+Une condition suffisante (butterfly, \citealt{gatheral2014arbitrage}) est :
+\begin{equation}
+  \eta(1 + |\rho|) \leq 4
+\end{equation}
+
+\subsection{Calibration en Deux Étapes}
+
+\paragraph{Étape 1.} Calibration de $(\kappa, \nu_0, \nu_\infty)$ sur les
+points ATM ($|k| < 0.05$) par minimisation de $\sum_i (\thetat^i - \hat{\theta}^i)^2$.
+
+\paragraph{Étape 2.} Calibration de $(\rho, \eta, \lambda)$ sur toute la
+surface, conditionnellement aux résultats de l'étape 1.
+
+% TODO : paramètres calibrés + tableau RMSE IV, R²
+% TODO : smile par maturité marché vs SSVI (plot_iv_smile avec iv_ssvi_col)
+% TODO : surface 3D SSVI (plot_iv_surface)

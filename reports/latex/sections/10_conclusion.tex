@@ -1,0 +1,21 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+Ce projet a permis de mettre en œuvre une chaîne complète de pricing de
+dérivés crypto, depuis la récupération des données de marché jusqu'au
+calcul de P\&L sous scénario de stress.
+
+Les principaux résultats sont :
+\begin{itemize}
+  \item Une courbe des taux implicites lissée (Nelson-Siegel) cohérente
+    avec les parités call-put observées sur le marché Deribit.
+  \item Une surface SSVI calibrée satisfaisant les conditions suffisantes
+    de non-arbitrage, avec une erreur RMSE IV de l'ordre de quelques points
+    de base.
+  \item Un bull call spread BTC pricé de manière cohérente avec le marché,
+    avec ses grecques calculées analytiquement.
+  \item Un portefeuille de couverture Delta-Gamma-Vega construit par
+    optimisation SLSQP, avec vérification numérique de la neutralité.
+  \item Une analyse de stress montrant l'efficacité partielle de la
+    couverture et identifiant les sources de résidu.
+\end{itemize}

@@ -1,0 +1,30 @@
+\section{Produit Dérivé — Bull Call Spread}
+\label{sec:produit}
+
+\subsection{Description}
+
+Un bull call spread est constitué de :
+\begin{itemize}
+  \item Achat d'un call de strike $K_1$ (coût $C_1$)
+  \item Vente d'un call de strike $K_2 > K_1$ (revenu $C_2$)
+\end{itemize}
+
+Le payoff à maturité est :
+\begin{equation}
+  \Pi_T = \max(S_T - K_1, 0) - \max(S_T - K_2, 0) = \min\!\bigl(\max(S_T - K_1, 0),\, K_2 - K_1\bigr)
+\end{equation}
+
+\subsection{Pricing via SSVI}
+
+La vol implicite à chaque strike est extraite de la surface SSVI :
+$\sigma_i = \sqrt{w(\ln(K_i/F_T), T) / T}$.
+
+Le prix est $\Pi_0 = C(K_1) - C(K_2)$ où chaque call est pricé par Black 1976.
+
+\subsection{Grecques}
+
+Par additivité : $\mathcal{G}_{spread} = \mathcal{G}_{C_1} - \mathcal{G}_{C_2}$.
+
+% TODO : tableau K1, K2, T, F, σ(K1), σ(K2), prix, grecques
+% TODO : courbe de payoff (plot_payoff)
+% TODO : profil des grecques vs spot

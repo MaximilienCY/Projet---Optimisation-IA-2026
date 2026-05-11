@@ -1,0 +1,29 @@
+\section{Scénario de Stress et P\&L}
+\label{sec:stress}
+
+\subsection{Scénario}
+
+On applique simultanément :
+\begin{itemize}
+  \item $F_T \to F_T \times 1.10$ (choc spot $+10\%$ en relatif)
+  \item $\sigma_{SSVI}(k,t) \to \sigma_{SSVI}(k,t) - 0.10$ (choc vol $-10\,\text{pp}$ absolu)
+  \item $T \to T - \tfrac{1}{52}$ (avancement de 1 semaine)
+\end{itemize}
+
+\textbf{Convention du choc de vol.}
+Un choc absolu de $-10\,\text{pp}$ signifie : si $\sigma = 80\%$, alors
+$\sigma_{new} = 70\%$. C'est plus conservateur qu'un choc relatif $\times 0.9$
+(qui donnerait $72\%$) et cohérent avec la pratique des risk managers.
+
+\subsection{Calcul du P\&L}
+
+\begin{equation}
+  \PnL_{total} = \PnL_{produit} + \PnL_{hedge}
+\end{equation}
+avec $\PnL_{produit} = -(V_{produit}^{new} - V_{produit}^{init})$
+(position vendeuse) et $\PnL_{hedge} = \sum_i q_i (V_i^{new} - V_i^{init})$.
+
+\subsection{Résultats}
+
+% TODO : tableau de revalorisation (F_avant/après, σ_avant/après, prix_avant/après)
+% TODO : waterfall P&L (plot_pnl_waterfall)

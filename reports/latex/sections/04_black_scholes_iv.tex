@@ -1,0 +1,36 @@
+\section{Black-Scholes, Volatilité Implicite et Grecques}
+\label{sec:bs_iv}
+
+\subsection{Formule de Black 1976}
+
+Pour les options sur futures, on utilise la formule de Black (1976) :
+\begin{align}
+  C &= e^{-rT}\bigl[F_T\,\N(d_1) - K\,\N(d_2)\bigr] \label{eq:black_call}\\
+  P &= e^{-rT}\bigl[K\,\N(-d_2) - F_T\,\N(-d_1)\bigr] \label{eq:black_put}
+\end{align}
+avec $d_1 = \dfrac{\ln(F_T/K) + \frac{1}{2}\sigma^2 T}{\sigma\sqrt{T}}$ et
+$d_2 = d_1 - \sigma\sqrt{T}$.
+
+\subsection{Extraction de la Volatilité Implicite}
+
+La volatilité implicite $\iv$ est la valeur de $\sigma$ telle que
+$\text{Black}(F_T, K, T, r, \sigma) = m$ où $m$ est le prix de marché.
+
+\paragraph{Newton-Raphson.} Partant de $\sigma^{(0)}$ (approximation de
+Brenner-Subrahmanyam), on itère :
+\begin{equation}
+  \sigma^{(n+1)} = \sigma^{(n)} - \frac{\text{Black}(\sigma^{(n)}) - m}{\text{Vega}(\sigma^{(n)})}
+\end{equation}
+Convergence quadratique (~5 itérations). Fallback dichotomie si Vega $< \varepsilon$
+ou divergence.
+
+\subsection{Grecques}
+
+\begin{align}
+  \Delta_C &= e^{-rT}\N(d_1) & \Delta_P &= -e^{-rT}\N(-d_1)\\
+  \Gamma   &= \frac{e^{-rT}\,n(d_1)}{F_T\,\sigma\,\sqrt{T}} &
+  \mathcal{V} &= e^{-rT}\,F_T\,n(d_1)\,\sqrt{T}
+\end{align}
+
+% TODO : statistiques de convergence Newton vs Dichotomie
+% TODO : smile de volatilité pour plusieurs maturités (plot_iv_smile)

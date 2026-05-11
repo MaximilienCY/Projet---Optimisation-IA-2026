@@ -1,0 +1,29 @@
+\section{Introduction}
+
+Ce rapport présente un pipeline complet de pricing et de gestion des risques
+appliqué aux options sur Bitcoin cotées sur la plateforme Deribit.
+L'objectif est de reproduire la chaîne quantitative utilisée en pratique par
+un desk de dérivés : extraction des données de marché, modélisation de la
+surface de volatilité, pricing d'un produit structuré et construction d'un
+portefeuille de couverture auto-finançant.
+
+\subsection{Contexte et Motivation}
+
+Le marché des options crypto est caractérisé par une volatilité implicite
+élevée et fortement asymétrique. Deribit est la principale plateforme d'options
+BTC/ETH, offrant une liquidité suffisante pour une étude empirique rigoureuse.
+Le choix du Bitcoin (BTC) est motivé par sa profondeur de marché et la
+disponibilité d'un historique d'options suffisant.
+
+\subsection{Organisation du Rapport}
+
+Le rapport suit la logique du pipeline :
+\begin{enumerate}
+  \item Données et prétraitement (\cref{sec:donnees})
+  \item Courbe des taux et Nelson-Siegel (\cref{sec:taux})
+  \item Black-Scholes et volatilité implicite (\cref{sec:bs_iv})
+  \item Calibration SSVI (\cref{sec:ssvi})
+  \item Produit dérivé (\cref{sec:produit})
+  \item Couverture Delta-Gamma-Vega (\cref{sec:couverture})
+  \item Scénario de stress (\cref{sec:stress})
+\end{enumerate}

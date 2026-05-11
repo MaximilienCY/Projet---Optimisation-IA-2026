@@ -1,0 +1,29 @@
+\section{Couverture Delta-Gamma-Vega}
+\label{sec:couverture}
+
+\subsection{Formulation du Problème}
+
+On vend 1 unité du bull call spread. On construit un portefeuille de couverture
+$\Pi_{hedge}$ avec $n$ instruments (options cotées + future) tels que :
+\begin{equation}
+  G\,q = g_{produit},\quad G \in \Real^{3\times n},\quad q \in \Real^n
+  \label{eq:hedge_system}
+\end{equation}
+où $G_{ij}$ est la $i$-ème grecque ($\Delta, \Gamma, \mathcal{V}$) du $j$-ème instrument,
+et $g_{produit} = (\Delta_p, \Gamma_p, \mathcal{V}_p)^\top$.
+
+\subsection{Optimisation}
+
+On minimise :
+\begin{equation}
+  \min_q \|q\|^2 + \alpha\,\|Gq - g_{produit}\|^2
+  \quad \text{s.c.} \quad |q_i| \leq q_{max}
+\end{equation}
+par \texttt{scipy.optimize.minimize} (SLSQP). Fallback moindres carrés
+$q^* = G^\dagger\,g_{produit}$ si SLSQP ne converge pas.
+
+\subsection{Résultats}
+
+% TODO : tableau composition du portefeuille (quantités, prix, coût, grecques)
+% TODO : bar chart quantités (plot_hedge_composition)
+% TODO : vérification numérique résidus ΔΓV

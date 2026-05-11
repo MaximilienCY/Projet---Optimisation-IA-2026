@@ -1,0 +1,24 @@
+\section{Limites et Perspectives}
+\label{sec:limites}
+
+\subsection{Limites du Modèle}
+
+\begin{description}
+  \item[SSVI] La paramétrisation power-law peut manquer de flexibilité
+    pour les options très courtes maturités (wings extrêmes).
+  \item[Couverture statique] Le portefeuille est recalibré une seule fois :
+    la couverture se dégrade si les grecques changent significativement.
+  \item[Choc simplifié] Le décalage rigide de $\sigma_{SSVI}$ ignore la
+    déformation du skew après un choc de marché.
+  \item[Liquidité] Les quantités issues de l'optimisation ne tiennent pas
+    compte de la profondeur réelle du carnet d'ordres.
+\end{description}
+
+\subsection{Pistes d'Amélioration}
+
+\begin{itemize}
+  \item Calibration slice-par-slice (SVI) pour meilleure précision locale.
+  \item Couverture dynamique (delta-hedging continu ou discret).
+  \item Calcul du VaR/CVaR du portefeuille.
+  \item Scénarios de stress multi-facteurs (corrélations BTC/ETH).
+\end{itemize}

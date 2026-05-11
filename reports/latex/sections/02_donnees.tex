@@ -1,0 +1,50 @@
+\section{Données et Prétraitement}
+\label{sec:donnees}
+
+\subsection{Source des Données}
+
+Les données sont extraites en temps réel via l'API publique REST de Deribit
+(\url{https://www.deribit.com/api/v2}), sans authentification.
+Les points d'accès utilisés sont :
+\begin{itemize}
+  \item \texttt{/public/get\_instruments} : liste des options actives
+  \item \texttt{/public/get\_order\_book} : carnet d'ordres par instrument
+  \item \texttt{/public/get\_index\_price} : prix spot de l'indice BTC/USD
+\end{itemize}
+
+\subsection{Variables Extraites}
+
+Pour chaque option, on extrait : strike $K$, type (call/put), date d'expiration,
+bid $B$, ask $A$, mid $m = (B+A)/2$, prix forward $F_T$ (issu des futures).
+
+\subsection{Critères de Filtrage}
+
+\begin{description}
+  \item[Spread bid-ask] Exclure si $(A-B)/m > s^*$ avec $s^* = 25\%$ par défaut.
+  \item[Maturité] $T \in [1\text{ jour}, 3\text{ ans}]$.
+  \item[Moneyness] $K/F_T \in [0.50, 2.00]$ pour écarter les options extrêmes.
+  \item[Prix positif] $m > 0$, $B \leq A$, $K > 0$.
+\end{description}
+
+\subsection{Résultats du Nettoyage}
+
+% TODO : insérer le tableau de rapport de nettoyage (cleaning_report.json)
+\begin{table}[H]
+  \centering
+  \caption{Rapport de nettoyage des données}
+  \begin{tabular}{lrr}
+    \toprule
+    Motif & Lignes rejetées & \% \\
+    \midrule
+    Spread trop large & --- & --- \\
+    Maturité hors bornes & --- & --- \\
+    Moneyness extrême & --- & --- \\
+    Prix négatif / incohérent & --- & --- \\
+    \midrule
+    \textbf{Total retenu} & \textbf{---} & \textbf{---} \\
+    \bottomrule
+  \end{tabular}
+  \label{tab:nettoyage}
+\end{table}
+
+% TODO : insérer histogramme distribution des spreads (fig_spread_distribution)

@@ -1,0 +1,37 @@
+\section{Extraction de la Courbe des Taux et Nelson-Siegel}
+\label{sec:taux}
+
+\subsection{Parité Call-Put et Taux Implicite}
+
+En l'absence d'arbitrage, la parité call-put donne pour un call $C$ et un put $P$
+de même strike $K$ et maturité $T$ :
+\begin{equation}
+  C - P = e^{-rT}(F_T - K)
+  \label{eq:put_call_parity}
+\end{equation}
+d'où le taux implicite continu :
+\begin{equation}
+  r(T) = -\frac{1}{T}\ln\!\left(\frac{C - P}{F_T - K}\right)
+  \label{eq:taux_implicite}
+\end{equation}
+
+Pour robustesse, on calcule la médiane sur les paires $(C, P)$ valides
+(même strike, même maturité) pour chaque $T$.
+
+\subsection{Modèle Nelson-Siegel}
+
+On lisse la courbe des taux par le modèle de Nelson-Siegel (1987) :
+\begin{equation}
+  r_{NS}(T) = \beta_0 + \beta_1\,\frac{1 - e^{-\lambda T}}{\lambda T}
+            + \beta_2\!\left(\frac{1 - e^{-\lambda T}}{\lambda T} - e^{-\lambda T}\right)
+  \label{eq:nelson_siegel}
+\end{equation}
+
+Les paramètres $(\beta_0, \beta_1, \beta_2, \lambda)$ sont calibrés par
+minimisation des moindres carrés (évolution différentielle + multi-départ L-BFGS-B).
+
+% TODO : insérer courbe taux empiriques vs NS (plot_rates_curve)
+
+\subsection{Résultats}
+
+% TODO : tableau des paramètres NS calibrés + RMSE, R²

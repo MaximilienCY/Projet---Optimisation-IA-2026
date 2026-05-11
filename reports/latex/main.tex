@@ -1,0 +1,100 @@
+%% main.tex — Rapport : Pricing et Gestion des Risques sur Options Deribit
+%% CY Tech ING 2 — Optimisation & IA — 2025-2026
+%%
+%% Compiler avec : pdflatex main.tex  (ou lualatex)
+%% Bibliographie : bibtex main  puis  pdflatex main.tex (×2)
+
+\documentclass[12pt, a4paper]{article}
+
+%% ─── Encodage et langue ───────────────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+
+%% ─── Mise en page ─────────────────────────────────────────────────────────────
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+\usepackage{microtype}
+\usepackage{parskip}
+
+%% ─── Mathématiques ────────────────────────────────────────────────────────────
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{mathtools}
+\usepackage{bm}          % gras mathématique
+
+%% ─── Figures et tableaux ──────────────────────────────────────────────────────
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{float}
+\usepackage[font=small, labelfont=bf]{caption}
+\usepackage{subcaption}
+
+%% ─── Code ─────────────────────────────────────────────────────────────────────
+\usepackage{listings}
+\usepackage{xcolor}
+\lstset{
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue},
+  commentstyle=\color{gray},
+  numbers=left, numberstyle=\tiny,
+  breaklines=true,
+  frame=single,
+  language=Python,
+}
+
+%% ─── Liens et références ──────────────────────────────────────────────────────
+\usepackage[colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue]{hyperref}
+\usepackage{cleveref}
+
+%% ─── Bibliographie ────────────────────────────────────────────────────────────
+\usepackage{natbib}
+\bibliographystyle{plainnat}
+
+%% ─── Notations mathématiques ─────────────────────────────────────────────────
+\newcommand{\N}{\mathcal{N}}          % loi normale
+\newcommand{\E}{\mathbb{E}}           % espérance
+\newcommand{\Real}{\mathbb{R}}
+\newcommand{\F}{F_T}                  % prix forward
+\newcommand{\iv}{\hat{\sigma}}        % vol implicite
+\newcommand{\wt}{w(k,t)}             % variance totale SSVI
+\newcommand{\thetat}{\theta_t}        % variance ATM totale
+\newcommand{\phit}{\phi(\theta_t)}    % paramètre de skew SSVI
+\newcommand{\PnL}{\text{P\&L}}
+
+
+%% ─── Métadonnées ──────────────────────────────────────────────────────────────
+\title{
+  \textbf{Pricing et Gestion des Risques sur Options BTC Deribit}\\[0.5em]
+  \large Calibration SSVI, Couverture Delta-Gamma-Vega et Analyse de Stress
+}
+\author{[Prénom Nom] \\ CY Tech ING 2}
+\date{Juin 2026}
+
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+% ─── Sections ─────────────────────────────────────────────────────────────────
+
+\input{sections/01_introduction}
+\input{sections/02_donnees}
+\input{sections/03_taux}
+\input{sections/04_black_scholes_iv}
+\input{sections/05_ssvi}
+\input{sections/06_produit}
+\input{sections/07_couverture}
+\input{sections/08_stress}
+\input{sections/09_limites}
+\input{sections/10_conclusion}
+
+% ─── Bibliographie ────────────────────────────────────────────────────────────
+\bibliography{references}
+
+\end{document}
