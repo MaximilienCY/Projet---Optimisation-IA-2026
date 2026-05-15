@@ -95,24 +95,39 @@ def build_options_dataframe(
         expiry_str = parsed["expiry_str"]
 
         # Prix en BTC (fraction du sous-jacent) → USD
-        # Sur Deribit, best_bid_price/best_ask_price/mark_price pour les options BTC
+        # Sur Deribit, bid_price/ask_price/mark_price pour les options BTC
         # sont exprimés en BTC (ex: 0.0617 BTC). On convertit en USD via underlying_price.
-        bid_raw = _to_float(item.get("best_bid_price", 0.0))
-        ask_raw = _to_float(item.get("best_ask_price", 0.0))
+        # NOTE : l'API retourne "bid_price"/"ask_price", PAS "best_bid_price"/"best_ask_price".
+        bid_raw = _to_float(item.get("bid_price", 0.0))
+        ask_raw = _to_float(item.get("ask_price", 0.0))
         mark_raw = _to_float(item.get("mark_price", 0.0))
         und_raw = _to_float(item.get("underlying_price", spot))
+        mark_iv_raw = _to_float(item.get("mark_iv", 0.0))           # IV Deribit (%)
+        und_index = item.get("underlying_index", "index_price")      # nom du future ou 'index_price'
 
-        # Conversion BTC → USD (underlying_price est le spot en USD/BTC)
+        # Conversion BTC → USD (underlying_price est en USD/BTC)
         underlying = und_raw if und_raw > 0 else spot
         bid = bid_raw * underlying if bid_raw > 0 else 0.0
         ask = ask_raw * underlying if ask_raw > 0 else 0.0
         mark = mark_raw * underlying
 
-        # Si bid/ask nuls (market maker absent), utilise mark_price comme mid
-        mid = 0.5 * (bid + ask) if (bid > 0 and ask > 0) else mark
+        # mid = (bid+ask)/2 si two-sided, sinon mid_price API, sinon mark_price
+        api_mid_raw = _to_float(item.get("mid_price", 0.0))
+        api_mid = api_mid_raw * underlying if api_mid_raw > 0 else 0.0
+        if bid > 0 and ask > 0:
+            mid = 0.5 * (bid + ask)
+        elif api_mid > 0:
+            mid = api_mid
+        else:
+            mid = mark
 
-        # Forward price : utilise le future si dispo, sinon spot * e^{rT} approximé par spot
-        forward = forward_map.get(expiry_str, und_raw if und_raw > 0 else spot)
+        # Forward price :
+        #   - Si underlying_index != 'index_price' → underlying_price EST le forward du future Deribit
+        #   - Sinon → utilise le future coté (forward_map) ou le spot comme fallback
+        if und_index != "index_price" and und_raw > 0:
+            forward = und_raw   # forward officiel Deribit pour cette maturité
+        else:
+            forward = forward_map.get(expiry_str, und_raw if und_raw > 0 else spot)
 
         log_moneyness = np.log(parsed["strike"] / forward) if forward > 0 else np.nan
 
@@ -123,7 +138,9 @@ def build_options_dataframe(
             "ask": ask,
             "mid": mid,
             "mark_price": mark,
+            "mark_iv": mark_iv_raw,                        # IV Deribit (% annualisé)
             "underlying_price": und_raw if und_raw > 0 else spot,
+            "underlying_index": und_index,
             "spot": spot,
             "forward_price": forward,
             "log_moneyness": log_moneyness,
@@ -170,8 +187,8 @@ def build_futures_dataframe(
             continue
 
         T = time_to_maturity(expiry_dt, reference_dt)
-        bid = _to_float(item.get("best_bid_price", 0.0))
-        ask = _to_float(item.get("best_ask_price", 0.0))
+        bid = _to_float(item.get("bid_price", 0.0))
+        ask = _to_float(item.get("ask_price", 0.0))
         mark = _to_float(item.get("mark_price", 0.0))
         mid = 0.5 * (bid + ask) if (bid > 0 and ask > 0) else mark
 
@@ -212,9 +229,9 @@ def _build_forward_map(futures_data: list[dict], spot: float) -> dict[str, float
             continue
         expiry_str = parts[1]
         mark = _to_float(item.get("mark_price", 0.0))
-        bid = _to_float(item.get("best_bid_price", 0.0))
-        ask = _to_float(item.get("best_ask_price", 0.0))
-        mid = 0.5 * (bid + ask) if (bid > 0 and ask > 0) else mark
+        bid_f  = _to_float(item.get("bid_price", 0.0))
+        ask_f  = _to_float(item.get("ask_price", 0.0))
+        mid  = 0.5*(bid_f+ask_f) if (bid_f>0 and ask_f>0) else mark
         if mid > 0:
             forward_map[expiry_str] = mid
     return forward_map

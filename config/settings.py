@@ -65,13 +65,14 @@ class DataCleaningConfig:
 class NelsonSiegelConfig:
     """Paramètres de calibration Nelson-Siegel."""
 
-    lambda_bounds: Tuple[float, float] = (0.05, 10.0)
+    lambda_bounds: Tuple[float, float] = (0.1, 3.0)
     beta0_bounds: Tuple[float, float] = (-0.20, 0.50)
     beta1_bounds: Tuple[float, float] = (-0.50, 0.50)
     beta2_bounds: Tuple[float, float] = (-0.50, 0.50)
     max_iter: int = 10_000
     tol: float = 1e-10
     n_starts: int = 20    # Multi-start pour robustesse
+    min_fit_T: float = 14 / 365.0  # Exclure T < 14j du fit (taux courts instables)
 
 
 # ─────────────────────────────────────────────

@@ -126,6 +126,11 @@ def calibrate_nelson_siegel(
       1. Évolution différentielle (recherche globale, robuste)
       2. Raffinement L-BFGS-B depuis la meilleure solution
 
+    Les maturités T < cfg.min_fit_T (défaut 5j) sont exclues du fit car les
+    taux courts sont numériquement instables (division par T très petit dans
+    la parité call-put). Ils sont conservés dans df_rates pour traçage mais
+    ignorés par l'optimiseur.
+
     Parameters
     ----------
     maturities : tableau des maturités en années
@@ -135,16 +140,30 @@ def calibrate_nelson_siegel(
 
     Returns
     -------
-    (params, fit_metrics) avec fit_metrics = {rmse, r2, n_points}
+    (params, fit_metrics) avec fit_metrics = {rmse, r2, n_points, n_excluded_short}
     """
     cfg = cfg or CONFIG.nelson_siegel
 
-    T = np.asarray(maturities, dtype=float)
-    R = np.asarray(rates, dtype=float)
+    T_all = np.asarray(maturities, dtype=float)
+    R_all = np.asarray(rates, dtype=float)
+
+    # Exclure les maturités très courtes du fit (taux instables)
+    fit_mask = T_all >= cfg.min_fit_T
+    n_excluded = int((~fit_mask).sum())
+    T = T_all[fit_mask]
+    R = R_all[fit_mask]
+    W = weights[fit_mask] if weights is not None else None
+
+    if n_excluded > 0:
+        logger.info(
+            "Nelson-Siegel : %d point(s) T < %.4fa exclus du fit (taux courts instables).",
+            n_excluded, cfg.min_fit_T,
+        )
 
     if len(T) < 2:
         logger.warning("Trop peu de points pour calibrer Nelson-Siegel (%d).", len(T))
-        return NelsonSiegelParams(), {"rmse": np.nan, "r2": np.nan, "n_points": len(T)}
+        return NelsonSiegelParams(), {"rmse": np.nan, "r2": np.nan, "n_points": len(T),
+                                     "n_excluded_short": n_excluded}
 
     # Bornes : [β₀, β₁, β₂, λ]
     bounds = [
@@ -160,7 +179,7 @@ def calibrate_nelson_siegel(
     # Évolution différentielle (robuste aux optima locaux)
     try:
         de_result = differential_evolution(
-            func=lambda x: _objective(x, T, R, weights),
+            func=lambda x: _objective(x, T, R, W),
             bounds=bounds,
             seed=42,
             maxiter=cfg.max_iter // 10,
@@ -187,7 +206,7 @@ def calibrate_nelson_siegel(
         ])
         try:
             res = minimize(
-                fun=lambda x: _objective(x, T, R, weights),
+                fun=lambda x: _objective(x, T, R, W),
                 x0=x0,
                 method="L-BFGS-B",
                 bounds=bounds,
@@ -201,7 +220,8 @@ def calibrate_nelson_siegel(
 
     if best_result is None:
         logger.error("Calibration Nelson-Siegel échouée.")
-        return NelsonSiegelParams(), {"rmse": np.nan, "r2": np.nan, "n_points": len(T)}
+        return NelsonSiegelParams(), {"rmse": np.nan, "r2": np.nan, "n_points": len(T),
+                                     "n_excluded_short": n_excluded}
 
     params = NelsonSiegelParams.from_array(best_result.x)
     r_hat = nelson_siegel_rate(T, params)
@@ -210,6 +230,7 @@ def calibrate_nelson_siegel(
         "rmse": rmse(R, r_hat),
         "r2": r_squared(R, r_hat),
         "n_points": len(T),
+        "n_excluded_short": n_excluded,
         "optimizer_success": bool(best_result.success) if hasattr(best_result, "success") else True,
     }
     logger.info(

@@ -12,6 +12,7 @@ Sorties     : reports/figures/fig_*.png  (300 DPI)
 
 from __future__ import annotations
 
+import pickle
 import sys
 from pathlib import Path
 
@@ -22,6 +23,11 @@ import numpy as np
 import pandas as pd
 
 matplotlib.use("Agg")
+
+# Ajoute la racine du projet au path Python pour pouvoir importer src/
+_PROJECT_ROOT = Path(__file__).parent.parent.resolve()
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
 
 # ── Répertoire de sortie ────────────────────────────────────────────────────
 OUT_DIR = Path(__file__).parent / "figures"
@@ -238,6 +244,128 @@ def fig_vol_smile() -> None:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# FIGURE 4 — Courbe des taux : empirique vs Nelson-Siegel
+# ══════════════════════════════════════════════════════════════════════════════
+
+def fig_nelson_siegel() -> None:
+    """
+    Taux implicites empiriques (parité call-put) + ajustement Nelson-Siegel.
+
+    Charge df_clean depuis data/processed/bundle.pkl, appelle les fonctions
+    métier existantes pour recalculer les taux et recalibrer Nelson-Siegel,
+    puis trace la figure.
+    """
+    bundle_path = _PROJECT_ROOT / "data" / "processed" / "bundle.pkl"
+    if not bundle_path.exists():
+        print(f"  ✗  bundle.pkl introuvable ({bundle_path}) — figure ignorée.")
+        return
+
+    with bundle_path.open("rb") as fh:
+        bundle = pickle.load(fh)
+
+    df_clean = bundle["df_clean"]
+
+    # ── Imports métier (sans Streamlit) ──────────────────────────────────────
+    from src.rates.put_call_parity import extract_implied_rates
+    from src.rates.nelson_siegel import calibrate_nelson_siegel, nelson_siegel_rate
+
+    # ── Extraction des taux empiriques ───────────────────────────────────────
+    df_rates = extract_implied_rates(df_clean, aggregation="median")
+
+    if df_rates.empty:
+        print("  ✗  Aucun taux extrait — figure ignorée.")
+        return
+
+    T_emp = df_rates["T"].values
+    r_emp = df_rates["rate"].values
+
+    # ── Calibration Nelson-Siegel ─────────────────────────────────────────────
+    params, metrics = calibrate_nelson_siegel(T_emp, r_emp)
+
+    # ── Affichage terminal des paramètres ─────────────────────────────────────
+    print(f"\n  Paramètres Nelson-Siegel calibrés :")
+    print(f"    β₀ (niveau long terme) = {params.beta0:+.6f}  ({params.beta0*100:+.4f} %)")
+    print(f"    β₁ (pente)             = {params.beta1:+.6f}  ({params.beta1*100:+.4f} %)")
+    print(f"    β₂ (courbure)          = {params.beta2:+.6f}  ({params.beta2*100:+.4f} %)")
+    print(f"    λ  (décroissance)      = {params.lambda_:.6f}")
+    print(f"    R²                     = {metrics['r2']:.4f}")
+    print(f"    RMSE                   = {metrics['rmse']*1e4:.2f} bp\n")
+
+    # ── Courbe lissée ─────────────────────────────────────────────────────────
+    T_max = max(T_emp) * 1.15
+    T_fine = np.linspace(1e-4, T_max, 400)
+    r_ns = nelson_siegel_rate(T_fine, params)
+
+    # ── Tracé ─────────────────────────────────────────────────────────────────
+    fig, ax = plt.subplots(figsize=(10, 5))
+
+    ax.scatter(
+        T_emp,
+        r_emp * 100,
+        marker="x",
+        color="steelblue",
+        s=80,
+        linewidths=2.0,
+        zorder=5,
+        label="Taux empiriques (parité call-put)",
+    )
+    ax.plot(
+        T_fine,
+        r_ns * 100,
+        color="orangered",
+        linewidth=2.0,
+        label=f"Modèle Nelson-Siegel  (R² = {metrics['r2']:.3f})",
+    )
+
+    # Barres d'erreur (±1 écart-type si disponible)
+    if "rate_std" in df_rates.columns:
+        ax.errorbar(
+            T_emp,
+            r_emp * 100,
+            yerr=df_rates["rate_std"].values * 100,
+            fmt="none",
+            color="steelblue",
+            alpha=0.4,
+            capsize=3,
+            linewidth=1.0,
+        )
+
+    ax.set_xlabel("Maturité T (années)", fontsize=11)
+    ax.set_ylabel("Taux implicite r(T) (%)", fontsize=11)
+    ax.set_title(
+        "Courbe des taux implicites — Empirique vs Nelson-Siegel",
+        fontsize=13,
+        fontweight="bold",
+    )
+    ax.set_xlim(left=0, right=T_max)
+    ax.legend(fontsize=10, loc="best")
+    ax.grid(True, alpha=0.30, linestyle="--")
+
+    # Annotation des paramètres NS dans un encadré
+    txt = (
+        f"β₀ = {params.beta0*100:.4f} %\n"
+        f"β₁ = {params.beta1*100:.4f} %\n"
+        f"β₂ = {params.beta2*100:.4f} %\n"
+        f"λ  = {params.lambda_:.3f}"
+    )
+    ax.text(
+        0.98, 0.97, txt,
+        transform=ax.transAxes,
+        fontsize=8.5,
+        verticalalignment="top",
+        horizontalalignment="right",
+        bbox=dict(boxstyle="round,pad=0.4", facecolor="white", edgecolor="#aaaaaa", alpha=0.85),
+        fontfamily="monospace",
+    )
+
+    fig.tight_layout()
+    path = OUT_DIR / "fig_nelson_siegel.png"
+    fig.savefig(path, dpi=DPI, bbox_inches="tight")
+    plt.close(fig)
+    print(f"  ✓  {path.name}")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # Point d'entrée
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -246,7 +374,8 @@ def main() -> None:
     fig_raw_data_sample()
     fig_cleaning_funnel()
     fig_vol_smile()
-    print(f"\n{3} figures générées avec succès.\n")
+    fig_nelson_siegel()
+    print(f"\n4 figures générées avec succès.\n")
 
 
 if __name__ == "__main__":
