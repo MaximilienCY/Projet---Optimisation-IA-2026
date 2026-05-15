@@ -111,11 +111,11 @@ def fig_ssvi_surface(params: SSVIParams = DEFAULT_PARAMS) -> None:
     ax.set_xlabel("Log-moneyness  k", fontsize=11, labelpad=10)
     ax.set_ylabel("Maturité T (années)", fontsize=11, labelpad=10)
     ax.set_zlabel("Vol implicite (%)", fontsize=11, labelpad=8)
-    ax.set_title("Surface de volatilité implicite SSVI", fontsize=13, fontweight="bold", pad=14)
 
     ax.view_init(elev=28, azim=-50)
 
     fig.tight_layout()
+    fig.subplots_adjust(top=0.92)
     path = OUT_DIR / "fig_ssvi_surface.png"
     fig.savefig(path, dpi=DPI, bbox_inches="tight")
     plt.close(fig)
