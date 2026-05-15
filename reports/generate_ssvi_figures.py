@@ -76,7 +76,7 @@ def fig_ssvi_surface(params: SSVIParams = DEFAULT_PARAMS) -> None:
     K_mesh, T_mesh, IV_mesh = build_ssvi_surface(params, k_grid=k_grid, t_grid=t_grid)
     Z = IV_mesh * 100.0  # décimal → %
 
-    fig = plt.figure(figsize=(12, 8))
+    fig = plt.figure(figsize=(9, 6))
     ax = fig.add_subplot(111, projection="3d")
 
     surf = ax.plot_surface(
