@@ -21,16 +21,15 @@ from src.utils.plotting import (
 )
 
 st.title("🎯 Surface SSVI — Calibration et Visualisation")
+st.markdown("**Modèle SSVI** (Gatheral & Jacquier, 2014) :")
+st.latex(
+    r"w(k,t) = \frac{\theta_t}{2}"
+    r"\left\{1 + \rho\,\phi(\theta_t)\,k"
+    r"+ \sqrt{[\phi(\theta_t)\,k + \rho]^2 + (1-\rho^2)}\right\}"
+)
 st.markdown(
-    r"""
-    **Modèle SSVI** (Gatheral & Jacquier, 2014) :
-
-    $$w(k, t) = \frac{\theta_t}{2}\left\{1 + \rho\,\phi(\theta_t)\,k
-    + \sqrt{[\phi(\theta_t)\,k + \rho]^2 + (1-\rho^2)}\right\}$$
-
-    avec $\theta_t = \nu_\infty t + \frac{\nu_0 - \nu_\infty}{\kappa}(1 - e^{-\kappa t})$
-    et $\phi(\theta) = \eta / [\theta^\lambda (1+\theta)^{1-\lambda}]$
-    """
+    r"avec $\theta_t = \nu_\infty t + \frac{\nu_0 - \nu_\infty}{\kappa}(1 - e^{-\kappa t})$"
+    r" et $\phi(\theta) = \eta\,/\,[\theta^\lambda(1+\theta)^{1-\lambda}]$"
 )
 
 if "config" not in st.session_state:
@@ -146,14 +145,16 @@ st.markdown("---")
 st.subheader("📈 Smile de Volatilité : Marché vs SSVI")
 
 all_mats = sorted(df_iv_valid["T"].unique())
+# Même fix que page 05 : utiliser les vraies valeurs float, pas des arrondis
 selected_mats = st.multiselect(
     "Maturités à afficher",
-    [round(t, 3) for t in all_mats],
-    default=[round(t, 3) for t in all_mats[:min(4, len(all_mats))]],
+    options=all_mats,
+    default=all_mats[:min(4, len(all_mats))],
+    format_func=lambda t: f"T={t:.4f}a ({t * 365:.0f}j)",
 )
 if selected_mats:
-    df_plot = df_iv_valid[df_iv_valid["T"].isin(selected_mats)]
-    fig_smile = plot_iv_smile(df_plot, selected_mats, iv_ssvi_col="iv_ssvi")
+    # plot_iv_smile filtre internement via np.isclose(T, atol=0.02)
+    fig_smile = plot_iv_smile(df_iv_valid, selected_mats, iv_ssvi_col="iv_ssvi")
     st.plotly_chart(fig_smile, use_container_width=True)
 
 # Surface 3D / heatmap

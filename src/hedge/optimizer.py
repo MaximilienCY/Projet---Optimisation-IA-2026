@@ -84,6 +84,20 @@ def optimize_hedge(
         return np.array([]), {"status": "no_instruments"}
 
     G = build_greeks_matrix(instruments)
+
+    # Filtrer les colonnes NaN/inf (grecques invalides restantes)
+    valid_cols = np.all(np.isfinite(G), axis=0)
+    if not np.all(valid_cols):
+        logger.warning(
+            "%d instrument(s) avec grecques non-finies écartés de l'optimisation.",
+            (~valid_cols).sum(),
+        )
+        G = G[:, valid_cols]
+        instruments = [inst for inst, ok in zip(instruments, valid_cols) if ok]
+        n = len(instruments)
+        if n == 0:
+            return np.array([]), {"status": "all_instruments_invalid"}
+
     # Cible : neutraliser les grecques du produit vendu
     target = np.array([
         product_greeks.delta,
@@ -146,9 +160,14 @@ def optimize_hedge(
     )
 
     if not result.success:
-        # Fallback : moindres carrés avec bornes (pas de contrainte stricte)
-        logger.warning("SLSQP n'a pas convergé (%s). Fallback lstsq.", result.message)
-        q_ls, _, _, _ = np.linalg.lstsq(G, target, rcond=None)
+        # Fallback : moindres carrés (pseudo-inverse) — robuste même si G est mal conditionné
+        logger.warning("SLSQP n'a pas convergé (%s). Fallback pseudo-inverse.", result.message)
+        try:
+            q_ls, _, _, _ = np.linalg.lstsq(G, target, rcond=None)
+        except np.linalg.LinAlgError:
+            # SVD ne converge pas → utiliser la pseudo-inverse Moore-Penrose
+            logger.warning("lstsq SVD échoué, bascule sur pinv.")
+            q_ls = np.linalg.pinv(G) @ target
         q_ls = np.clip(q_ls, -cfg.max_position_size, cfg.max_position_size)
         quantities = q_ls
         obj_val = float(np.dot(q_ls, q_ls))

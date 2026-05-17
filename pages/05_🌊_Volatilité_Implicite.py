@@ -116,15 +116,18 @@ st.markdown("---")
 st.subheader("📈 Smile de Volatilité Implicite")
 
 available_maturities = sorted(df_valid["T"].unique())
+# Utiliser les vraies valeurs float comme clés (format_func pour l'affichage)
+# Évite le bug: round(t,3) ne retrouve pas t exact dans df["T"].isin()
 selected_mats = st.multiselect(
     "Maturités à afficher",
-    options=[round(t, 3) for t in available_maturities],
-    default=[round(t, 3) for t in available_maturities[:min(4, len(available_maturities))]],
+    options=available_maturities,
+    default=available_maturities[:min(4, len(available_maturities))],
+    format_func=lambda t: f"T={t:.4f}a ({t * 365:.0f}j)",
 )
 
 if selected_mats:
-    df_sub = df_valid[df_valid["T"].isin(selected_mats)]
-    fig_smile = plot_iv_smile(df_sub, selected_mats)
+    # plot_iv_smile filtre internement via np.isclose(T, atol=0.02)
+    fig_smile = plot_iv_smile(df_valid, selected_mats)
     st.plotly_chart(fig_smile, use_container_width=True)
 
 # ─── Grecques ────────────────────────────────────────────────────────────────

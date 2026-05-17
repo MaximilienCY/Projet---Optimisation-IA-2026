@@ -285,14 +285,51 @@ def plot_pnl_waterfall(pnl_breakdown: dict) -> go.Figure:
 
 
 def plot_newton_vs_bisection(df_conv: pd.DataFrame) -> go.Figure:
-    """Comparaison convergence Newton vs Dichotomie."""
-    fig = make_subplots(rows=1, cols=2,
-                        subplot_titles=("Itérations Newton-Raphson", "Itérations Dichotomie"))
-    for col, row, color in [("newton_iters", 1, "#1565C0"), ("bisect_iters", 2, "#E65100")]:
-        if col in df_conv.columns:
-            fig.add_trace(go.Histogram(x=df_conv[col], nbinsx=30,
-                                       marker_color=color, opacity=0.8,
-                                       name=col.replace("_", " ")),
-                          row=1, col=row)
+    """
+    Comparaison convergence Newton-Raphson vs Dichotomie.
+
+    Utilise les colonnes 'iv_method' (enum string) et 'iv_iters' (int)
+    produites par compute_implied_vols().
+    """
+    fig = make_subplots(
+        rows=1, cols=2,
+        subplot_titles=("Itérations Newton-Raphson", "Itérations Dichotomie"),
+    )
+
+    if "iv_method" not in df_conv.columns or "iv_iters" not in df_conv.columns:
+        # Colonnes manquantes — retourne figure vide avec message
+        fig.add_annotation(
+            text="Données de convergence non disponibles",
+            xref="paper", yref="paper", x=0.5, y=0.5,
+            showarrow=False, font=dict(size=14),
+        )
+        fig.update_layout(**_base_layout("Convergence : Newton-Raphson vs Dichotomie"))
+        return fig
+
+    nr_iters = df_conv.loc[df_conv["iv_method"] == "newton", "iv_iters"].dropna()
+    bis_iters = df_conv.loc[df_conv["iv_method"] == "bisection", "iv_iters"].dropna()
+
+    if not nr_iters.empty:
+        fig.add_trace(
+            go.Histogram(
+                x=nr_iters, nbinsx=20,
+                marker_color="#1565C0", opacity=0.8,
+                name=f"Newton ({len(nr_iters)} options)",
+            ),
+            row=1, col=1,
+        )
+    if not bis_iters.empty:
+        fig.add_trace(
+            go.Histogram(
+                x=bis_iters, nbinsx=30,
+                marker_color="#E65100", opacity=0.8,
+                name=f"Dichotomie ({len(bis_iters)} options)",
+            ),
+            row=1, col=2,
+        )
+
+    fig.update_xaxes(title_text="Nombre d'itérations", row=1, col=1)
+    fig.update_xaxes(title_text="Nombre d'itérations", row=1, col=2)
+    fig.update_yaxes(title_text="Nombre d'options", row=1, col=1)
     fig.update_layout(**_base_layout("Convergence : Newton-Raphson vs Dichotomie"))
     return fig

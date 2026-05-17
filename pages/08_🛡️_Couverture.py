@@ -17,13 +17,15 @@ from src.pricing.greeks import Greeks
 from src.volatility.ssvi import SSVIParams
 
 st.title("🛡️ Portefeuille de Couverture Delta-Gamma-Vega")
+st.markdown("**Objectif** : construire un portefeuille $\\Pi_{hedge}$ tel que :")
+st.latex(
+    r"\Delta_{hedge} = \Delta_{produit},\quad"
+    r"\Gamma_{hedge} = \Gamma_{produit},\quad"
+    r"\mathcal{V}_{hedge} = \mathcal{V}_{produit}"
+)
 st.markdown(
-    r"""
-    **Objectif** : construire un portefeuille $\Pi_{hedge}$ tel que :
-    $$\Delta_{hedge} = \Delta_{produit},\quad \Gamma_{hedge} = \Gamma_{produit},\quad \mathcal{V}_{hedge} = \mathcal{V}_{produit}$$
-
-    On résout $G\,q = g_{produit}$ par **SLSQP** (moindres carrés régularisés en fallback).
-    """
+    r"On résout $G\,q = g_{produit}$ par **SLSQP**"
+    " (moindres carrés régularisés en fallback)."
 )
 
 if "config" not in st.session_state:
@@ -80,20 +82,39 @@ if st.button("🛡️ Construire le Portefeuille de Couverture", type="primary")
             )
 
             # 2. Conversion en HedgeInstrument
+            def _safe_float(val, default: float) -> float:
+                """Retourne default si val est NaN / None / inf."""
+                try:
+                    v = float(val)
+                    return v if np.isfinite(v) else default
+                except (TypeError, ValueError):
+                    return default
+
             instruments: list[HedgeInstrument] = []
-            for _, row in df_candidates.iterrows():
+            skipped = 0
+            for idx, row in df_candidates.iterrows():
+                fwd = _safe_float(row.get("forward_price"), 50000.0)
                 inst = HedgeInstrument(
-                    instrument_name=str(row.get("instrument_name", f"inst_{_}")),
+                    instrument_name=str(row.get("instrument_name", f"inst_{idx}")),
                     option_type=str(row.get("option_type", "C")),
-                    strike=float(row.get("strike", 0.0)),
-                    T=float(row.get("T", product_T)),
-                    forward_price=float(row.get("forward_price", 50000.0)),
-                    rate=float(row.get("rate", 0.0)),
-                    iv=float(row.get("iv", 0.0)),
-                    mid_price=float(row.get("mid", row.get("mid_price", 0.0))),
+                    strike=_safe_float(row.get("strike"), fwd),
+                    T=_safe_float(row.get("T"), product_T),
+                    forward_price=fwd,
+                    rate=_safe_float(row.get("rate"), 0.0),
+                    iv=_safe_float(row.get("iv"), 0.0),
+                    mid_price=_safe_float(
+                        row.get("mid", row.get("mid_price", 0.0)), 0.0
+                    ),
                 )
                 inst.compute_and_set_greeks(ssvi_params=ssvi_params)
-                instruments.append(inst)
+                # Écarter les instruments avec grecques non-finies (NaN/inf)
+                if all(np.isfinite([inst.greeks.delta, inst.greeks.gamma, inst.greeks.vega])):
+                    instruments.append(inst)
+                else:
+                    skipped += 1
+
+            if skipped > 0:
+                st.warning(f"⚠️ {skipped} instrument(s) écarté(s) (grecques non-finies — NaN/inf).")
 
             if not instruments:
                 st.error("❌ Aucun instrument de couverture disponible.")
